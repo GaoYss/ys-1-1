@@ -1,10 +1,14 @@
 <template>
   <section>
     <PageHeader eyebrow="Inventory" title="原料库存预警">
-      <button class="primary-btn" @click="submitIngredient">保存原料</button>
+      <button class="primary-btn" @click="submitIngredient">
+        {{ editingId ? '保存修改' : '保存原料' }}
+      </button>
+      <button v-if="editingId" class="secondary-btn" @click="resetForm">取消编辑</button>
     </PageHeader>
 
     <section class="form-panel">
+      <div v-if="formError" class="error-text">{{ formError }}</div>
       <div class="form-grid">
         <label>
           原料名称
@@ -63,6 +67,9 @@
           :variant="warningLevelVariant(row.warningLevel)"
         />
       </template>
+      <template #actions="{ row }">
+        <button class="secondary-btn" @click="startEdit(row)">编辑</button>
+      </template>
     </DataTable>
   </section>
 </template>
@@ -80,6 +87,8 @@ const inventory = ref([])
 const suppliers = ref([])
 const keyword = ref('')
 const warningFilter = ref('')
+const editingId = ref(null)
+const formError = ref('')
 const form = reactive({
   name: '',
   category: '',
@@ -97,8 +106,18 @@ const columns = [
   { key: 'warningThreshold', label: '关注阈值' },
   { key: 'urgentThreshold', label: '紧急阈值' },
   { key: 'supplierName', label: '供应商' },
-  { key: 'warning', label: '状态' }
+  { key: 'warning', label: '状态' },
+  { key: 'actions', label: '操作' }
 ]
+
+function validateForm() {
+  if (form.urgentThreshold > form.warningThreshold) {
+    formError.value = '紧急阈值不能大于关注阈值，请检查后再提交'
+    return false
+  }
+  formError.value = ''
+  return true
+}
 
 async function loadInventory() {
   const params = {
@@ -116,8 +135,9 @@ async function loadOptions() {
   suppliers.value = res.data.suppliers
 }
 
-async function submitIngredient() {
-  await inventoryApi.create({ ...form })
+function resetForm() {
+  editingId.value = null
+  formError.value = ''
   Object.assign(form, {
     name: '',
     category: '',
@@ -127,7 +147,39 @@ async function submitIngredient() {
     urgentThreshold: 0,
     supplierId: null
   })
-  await loadInventory()
+}
+
+function startEdit(row) {
+  editingId.value = row.id
+  formError.value = ''
+  Object.assign(form, {
+    name: row.name,
+    category: row.category,
+    unit: row.unit,
+    stock: row.stock,
+    warningThreshold: row.warningThreshold,
+    urgentThreshold: row.urgentThreshold,
+    supplierId: row.supplierId
+  })
+}
+
+async function submitIngredient() {
+  if (!validateForm()) return
+  try {
+    if (editingId.value) {
+      await inventoryApi.update(editingId.value, { ...form })
+    } else {
+      await inventoryApi.create({ ...form })
+    }
+    resetForm()
+    await loadInventory()
+  } catch (err) {
+    if (err.response && err.response.data && err.response.data.error) {
+      formError.value = err.response.data.error
+    } else {
+      formError.value = '保存失败，请稍后重试'
+    }
+  }
 }
 
 onMounted(async () => {

@@ -12,6 +12,12 @@ from ..models.inventory import (
 inventory_bp = Blueprint("inventory", __name__)
 
 
+def _validate_thresholds(warning_threshold, urgent_threshold):
+    if urgent_threshold > warning_threshold:
+        return {"error": "紧急阈值不能大于关注阈值"}, 400
+    return None
+
+
 def _matches_warning_levels(item, levels):
     if not levels:
         return True
@@ -67,13 +73,20 @@ def inventory_summary():
 @inventory_bp.post("")
 def create_ingredient():
     data = request.get_json() or {}
+    warning_threshold = float(data.get("warningThreshold", 0))
+    urgent_threshold = float(data.get("urgentThreshold", 0))
+
+    validation_error = _validate_thresholds(warning_threshold, urgent_threshold)
+    if validation_error:
+        return validation_error
+
     ingredient = Ingredient(
         name=data["name"],
         category=data["category"],
         unit=data["unit"],
         stock=float(data.get("stock", 0)),
-        warning_threshold=float(data.get("warningThreshold", 0)),
-        urgent_threshold=float(data.get("urgentThreshold", 0)),
+        warning_threshold=warning_threshold,
+        urgent_threshold=urgent_threshold,
         supplier_id=data.get("supplierId"),
     )
     db.session.add(ingredient)
@@ -86,16 +99,19 @@ def update_ingredient(ingredient_id):
     ingredient = Ingredient.query.get_or_404(ingredient_id)
     data = request.get_json() or {}
 
+    warning_threshold = float(data.get("warningThreshold", ingredient.warning_threshold))
+    urgent_threshold = float(data.get("urgentThreshold", ingredient.urgent_threshold))
+
+    validation_error = _validate_thresholds(warning_threshold, urgent_threshold)
+    if validation_error:
+        return validation_error
+
     ingredient.name = data.get("name", ingredient.name)
     ingredient.category = data.get("category", ingredient.category)
     ingredient.unit = data.get("unit", ingredient.unit)
     ingredient.stock = float(data.get("stock", ingredient.stock))
-    ingredient.warning_threshold = float(
-        data.get("warningThreshold", ingredient.warning_threshold)
-    )
-    ingredient.urgent_threshold = float(
-        data.get("urgentThreshold", ingredient.urgent_threshold)
-    )
+    ingredient.warning_threshold = warning_threshold
+    ingredient.urgent_threshold = urgent_threshold
     ingredient.supplier_id = data.get("supplierId", ingredient.supplier_id)
 
     db.session.commit()

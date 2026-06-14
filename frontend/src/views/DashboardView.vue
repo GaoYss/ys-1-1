@@ -39,6 +39,9 @@
           <template #warningThreshold="{ row }">
             {{ row.warningThreshold }} {{ row.unit }}
           </template>
+          <template #urgentThreshold="{ row }">
+            {{ row.urgentThreshold }} {{ row.unit }}
+          </template>
           <template #warning="{ row }">
             <StatusBadge
               :label="warningLevelText(row.warningLevel)"
@@ -90,6 +93,7 @@ const warningColumns = [
   { key: 'name', label: '原料' },
   { key: 'stock', label: '当前库存' },
   { key: 'warningThreshold', label: '关注阈值' },
+  { key: 'urgentThreshold', label: '紧急阈值' },
   { key: 'warning', label: '状态' }
 ]
 const orderColumns = [
