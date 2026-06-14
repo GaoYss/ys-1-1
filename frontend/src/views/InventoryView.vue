@@ -75,13 +75,16 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 
 import { inventoryApi } from '../api/inventory'
 import DataTable from '../components/DataTable.vue'
 import PageHeader from '../components/PageHeader.vue'
 import StatusBadge from '../components/StatusBadge.vue'
 import { warningLevelText, warningLevelVariant } from '../utils/format'
+
+const route = useRoute()
 
 const inventory = ref([])
 const suppliers = ref([])
@@ -197,4 +200,13 @@ async function submitIngredient() {
 onMounted(async () => {
   await Promise.all([loadInventory(), loadOptions()])
 })
+
+watch(
+  () => route.fullPath,
+  async () => {
+    if (route.path === '/inventory') {
+      await Promise.all([loadInventory(), loadOptions()])
+    }
+  }
+)
 </script>

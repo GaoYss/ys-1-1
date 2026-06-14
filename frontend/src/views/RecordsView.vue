@@ -100,14 +100,10 @@ async function submitRecord() {
   error.value = ''
   try {
     await recordsApi.create({ ...form })
-    Object.assign(form, {
-      ingredientId: null,
-      recordType: 'in',
-      quantity: 1,
-      operator: '系统管理员',
-      source: '',
-      note: ''
-    })
+    form.ingredientId = null
+    form.quantity = 1
+    form.source = ''
+    form.note = ''
     await Promise.all([loadRecords(), loadOptions()])
   } catch (err) {
     error.value = err.response?.data?.message || '登记失败'
