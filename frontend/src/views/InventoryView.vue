@@ -111,6 +111,18 @@ const columns = [
 ]
 
 function validateForm() {
+  if (form.stock < 0) {
+    formError.value = '当前库存必须大于等于零，请检查后再提交'
+    return false
+  }
+  if (form.warningThreshold < 0) {
+    formError.value = '关注阈值必须大于等于零，请检查后再提交'
+    return false
+  }
+  if (form.urgentThreshold < 0) {
+    formError.value = '紧急阈值必须大于等于零，请检查后再提交'
+    return false
+  }
   if (form.urgentThreshold > form.warningThreshold) {
     formError.value = '紧急阈值不能大于关注阈值，请检查后再提交'
     return false

@@ -12,7 +12,13 @@ from ..models.inventory import (
 inventory_bp = Blueprint("inventory", __name__)
 
 
-def _validate_thresholds(warning_threshold, urgent_threshold):
+def _validate_ingredient(stock, warning_threshold, urgent_threshold):
+    if stock < 0:
+        return {"error": "当前库存必须大于等于零"}, 400
+    if warning_threshold < 0:
+        return {"error": "关注阈值必须大于等于零"}, 400
+    if urgent_threshold < 0:
+        return {"error": "紧急阈值必须大于等于零"}, 400
     if urgent_threshold > warning_threshold:
         return {"error": "紧急阈值不能大于关注阈值"}, 400
     return None
@@ -30,13 +36,19 @@ def list_ingredients():
     warning = request.args.get("warning")
     warning_levels = request.args.getlist("warningLevel")
 
-    query = Ingredient.query
-    if keyword:
-        query = query.filter(Ingredient.name.contains(keyword))
-    if warning == "true":
-        query = query.filter(Ingredient.stock <= Ingredient.warning_threshold)
+    if warning == "true" and not warning_levels:
+        warning_levels = [
+            WARNING_LEVEL_ATTENTION,
+            WARNING_LEVEL_URGENT,
+            WARNING_LEVEL_OUT_OF_STOCK,
+        ]
 
-    ingredients = query.order_by(Ingredient.warning_threshold.desc(), Ingredient.name).all()
+    ingredients = Ingredient.query.order_by(
+        Ingredient.warning_threshold.desc(), Ingredient.name
+    ).all()
+
+    if keyword:
+        ingredients = [item for item in ingredients if keyword in item.name]
 
     if warning_levels:
         ingredients = [
@@ -73,10 +85,11 @@ def inventory_summary():
 @inventory_bp.post("")
 def create_ingredient():
     data = request.get_json() or {}
+    stock = float(data.get("stock", 0))
     warning_threshold = float(data.get("warningThreshold", 0))
     urgent_threshold = float(data.get("urgentThreshold", 0))
 
-    validation_error = _validate_thresholds(warning_threshold, urgent_threshold)
+    validation_error = _validate_ingredient(stock, warning_threshold, urgent_threshold)
     if validation_error:
         return validation_error
 
@@ -84,7 +97,7 @@ def create_ingredient():
         name=data["name"],
         category=data["category"],
         unit=data["unit"],
-        stock=float(data.get("stock", 0)),
+        stock=stock,
         warning_threshold=warning_threshold,
         urgent_threshold=urgent_threshold,
         supplier_id=data.get("supplierId"),
@@ -99,17 +112,18 @@ def update_ingredient(ingredient_id):
     ingredient = Ingredient.query.get_or_404(ingredient_id)
     data = request.get_json() or {}
 
+    stock = float(data.get("stock", ingredient.stock))
     warning_threshold = float(data.get("warningThreshold", ingredient.warning_threshold))
     urgent_threshold = float(data.get("urgentThreshold", ingredient.urgent_threshold))
 
-    validation_error = _validate_thresholds(warning_threshold, urgent_threshold)
+    validation_error = _validate_ingredient(stock, warning_threshold, urgent_threshold)
     if validation_error:
         return validation_error
 
     ingredient.name = data.get("name", ingredient.name)
     ingredient.category = data.get("category", ingredient.category)
     ingredient.unit = data.get("unit", ingredient.unit)
-    ingredient.stock = float(data.get("stock", ingredient.stock))
+    ingredient.stock = stock
     ingredient.warning_threshold = warning_threshold
     ingredient.urgent_threshold = urgent_threshold
     ingredient.supplier_id = data.get("supplierId", ingredient.supplier_id)

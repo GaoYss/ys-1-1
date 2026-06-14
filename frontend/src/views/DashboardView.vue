@@ -64,7 +64,8 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 
 import { inventoryApi } from '../api/inventory'
 import { ordersApi } from '../api/orders'
@@ -73,6 +74,8 @@ import DataTable from '../components/DataTable.vue'
 import PageHeader from '../components/PageHeader.vue'
 import StatusBadge from '../components/StatusBadge.vue'
 import { statusText, warningLevelText, warningLevelVariant, WARNING_LEVEL } from '../utils/format'
+
+const route = useRoute()
 
 const summary = ref({
   ingredientCount: 0,
@@ -103,7 +106,7 @@ const orderColumns = [
   { key: 'totalAmount', label: '金额' }
 ]
 
-onMounted(async () => {
+async function loadAll() {
   const [summaryRes, inventoryRes, ordersRes, suppliersRes] = await Promise.all([
     inventoryApi.summary(),
     inventoryApi.list(),
@@ -114,7 +117,20 @@ onMounted(async () => {
   inventory.value = inventoryRes.data
   orders.value = ordersRes.data
   suppliers.value = suppliersRes.data
+}
+
+onMounted(() => {
+  loadAll()
 })
+
+watch(
+  () => route.fullPath,
+  async () => {
+    if (route.path === '/') {
+      await loadAll()
+    }
+  }
+)
 </script>
 
 <style scoped>
