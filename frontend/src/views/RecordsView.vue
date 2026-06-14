@@ -96,17 +96,43 @@ async function loadOptions() {
   ingredients.value = res.data.ingredients
 }
 
-async function submitRecord() {
+function validateForm() {
+  if (!form.ingredientId) {
+    error.value = '请选择原料'
+    return false
+  }
+  if (form.quantity <= 0) {
+    error.value = '数量必须大于零'
+    return false
+  }
+  if (!form.operator || !form.operator.trim()) {
+    error.value = '请填写经办人'
+    return false
+  }
+  if (form.recordType === 'out') {
+    const ingredient = ingredients.value.find((item) => item.id === form.ingredientId)
+    if (ingredient && form.quantity > ingredient.stock) {
+      error.value = `库存不足，当前库存只有 ${ingredient.stock} ${ingredient.unit}`
+      return false
+    }
+  }
   error.value = ''
+  return true
+}
+
+async function submitRecord() {
+  if (!validateForm()) return
   try {
     await recordsApi.create({ ...form })
     form.ingredientId = null
     form.quantity = 1
     form.source = ''
     form.note = ''
+    error.value = ''
     await Promise.all([loadRecords(), loadOptions()])
   } catch (err) {
-    error.value = err.response?.data?.message || '登记失败'
+    const errMsg = err.response?.data?.message || err.response?.data?.error || '登记失败'
+    error.value = errMsg
   }
 }
 

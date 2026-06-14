@@ -35,17 +35,6 @@ export function warningLevelVariant(level) {
   return map[level] || 'neutral'
 }
 
-export function getWarningLevel(stock, warningThreshold, urgentThreshold) {
-  if (stock <= 0) return WARNING_LEVEL.OUT_OF_STOCK
-  if (stock <= urgentThreshold) return WARNING_LEVEL.URGENT
-  if (stock <= warningThreshold) return WARNING_LEVEL.ATTENTION
-  return WARNING_LEVEL.NORMAL
-}
-
-export function isWarningLevel(level) {
-  return level !== WARNING_LEVEL.NORMAL
-}
-
 export function formatDateTime(value) {
   if (!value) return '-'
   return new Date(value).toLocaleString('zh-CN', { hour12: false })
