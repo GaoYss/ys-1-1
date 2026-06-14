@@ -23,8 +23,12 @@
           <input v-model.number="form.stock" type="number" min="0" />
         </label>
         <label>
-          预警线
+          关注阈值
           <input v-model.number="form.warningThreshold" type="number" min="0" />
+        </label>
+        <label>
+          紧急阈值
+          <input v-model.number="form.urgentThreshold" type="number" min="0" />
         </label>
         <label>
           默认供应商
@@ -40,19 +44,23 @@
 
     <div class="toolbar">
       <input v-model="keyword" placeholder="搜索原料" @input="loadInventory" />
-      <label class="checkbox-line">
-        <input v-model="onlyWarning" type="checkbox" @change="loadInventory" />
-        只看预警
-      </label>
+      <select v-model="warningFilter" @change="loadInventory">
+        <option value="">全部状态</option>
+        <option value="attention">关注</option>
+        <option value="urgent">紧急</option>
+        <option value="out_of_stock">断货</option>
+        <option value="normal">正常</option>
+      </select>
     </div>
 
     <DataTable :columns="columns" :rows="inventory">
       <template #stock="{ row }">{{ row.stock }} {{ row.unit }}</template>
       <template #warningThreshold="{ row }">{{ row.warningThreshold }} {{ row.unit }}</template>
+      <template #urgentThreshold="{ row }">{{ row.urgentThreshold }} {{ row.unit }}</template>
       <template #warning="{ row }">
         <StatusBadge
-          :label="row.warning ? '库存预警' : '正常'"
-          :variant="row.warning ? 'danger' : 'success'"
+          :label="warningLevelText(row.warningLevel)"
+          :variant="warningLevelVariant(row.warningLevel)"
         />
       </template>
     </DataTable>
@@ -66,17 +74,19 @@ import { inventoryApi } from '../api/inventory'
 import DataTable from '../components/DataTable.vue'
 import PageHeader from '../components/PageHeader.vue'
 import StatusBadge from '../components/StatusBadge.vue'
+import { warningLevelText, warningLevelVariant } from '../utils/format'
 
 const inventory = ref([])
 const suppliers = ref([])
 const keyword = ref('')
-const onlyWarning = ref(false)
+const warningFilter = ref('')
 const form = reactive({
   name: '',
   category: '',
   unit: '',
   stock: 0,
   warningThreshold: 0,
+  urgentThreshold: 0,
   supplierId: null
 })
 
@@ -84,16 +94,20 @@ const columns = [
   { key: 'name', label: '原料' },
   { key: 'category', label: '分类' },
   { key: 'stock', label: '库存' },
-  { key: 'warningThreshold', label: '预警线' },
+  { key: 'warningThreshold', label: '关注阈值' },
+  { key: 'urgentThreshold', label: '紧急阈值' },
   { key: 'supplierName', label: '供应商' },
   { key: 'warning', label: '状态' }
 ]
 
 async function loadInventory() {
-  const res = await inventoryApi.list({
-    keyword: keyword.value || undefined,
-    warning: onlyWarning.value ? 'true' : undefined
-  })
+  const params = {
+    keyword: keyword.value || undefined
+  }
+  if (warningFilter.value) {
+    params.warningLevel = warningFilter.value
+  }
+  const res = await inventoryApi.list(params)
   inventory.value = res.data
 }
 
@@ -110,6 +124,7 @@ async function submitIngredient() {
     unit: '',
     stock: 0,
     warningThreshold: 0,
+    urgentThreshold: 0,
     supplierId: null
   })
   await loadInventory()

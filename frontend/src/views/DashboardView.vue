@@ -8,8 +8,16 @@
         <strong>{{ summary.ingredientCount }}</strong>
       </article>
       <article class="metric">
-        <span>预警原料</span>
-        <strong>{{ summary.warningCount }}</strong>
+        <span>关注</span>
+        <strong>{{ summary.attentionCount || 0 }}</strong>
+      </article>
+      <article class="metric">
+        <span>紧急</span>
+        <strong class="urgent-count">{{ summary.urgentCount || 0 }}</strong>
+      </article>
+      <article class="metric">
+        <span>断货</span>
+        <strong class="out-of-stock-count">{{ summary.outOfStockCount || 0 }}</strong>
       </article>
       <article class="metric">
         <span>供应商</span>
@@ -30,6 +38,12 @@
           </template>
           <template #warningThreshold="{ row }">
             {{ row.warningThreshold }} {{ row.unit }}
+          </template>
+          <template #warning="{ row }">
+            <StatusBadge
+              :label="warningLevelText(row.warningLevel)"
+              :variant="warningLevelVariant(row.warningLevel)"
+            />
           </template>
         </DataTable>
       </section>
@@ -55,18 +69,28 @@ import { suppliersApi } from '../api/suppliers'
 import DataTable from '../components/DataTable.vue'
 import PageHeader from '../components/PageHeader.vue'
 import StatusBadge from '../components/StatusBadge.vue'
-import { statusText } from '../utils/format'
+import { statusText, warningLevelText, warningLevelVariant, WARNING_LEVEL } from '../utils/format'
 
-const summary = ref({ ingredientCount: 0, warningCount: 0, totalStock: 0 })
+const summary = ref({
+  ingredientCount: 0,
+  warningCount: 0,
+  attentionCount: 0,
+  urgentCount: 0,
+  outOfStockCount: 0,
+  totalStock: 0
+})
 const inventory = ref([])
 const orders = ref([])
 const suppliers = ref([])
 
-const warningItems = computed(() => inventory.value.filter((item) => item.warning))
+const warningItems = computed(() =>
+  inventory.value.filter((item) => item.warningLevel !== WARNING_LEVEL.NORMAL)
+)
 const warningColumns = [
   { key: 'name', label: '原料' },
   { key: 'stock', label: '当前库存' },
-  { key: 'warningThreshold', label: '预警线' }
+  { key: 'warningThreshold', label: '关注阈值' },
+  { key: 'warning', label: '状态' }
 ]
 const orderColumns = [
   { key: 'orderNo', label: '订单号' },
@@ -88,3 +112,13 @@ onMounted(async () => {
   suppliers.value = suppliersRes.data
 })
 </script>
+
+<style scoped>
+.urgent-count {
+  color: #a72f25;
+}
+
+.out-of-stock-count {
+  color: #2d2d2d;
+}
+</style>

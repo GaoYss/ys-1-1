@@ -41,6 +41,7 @@ def seed_data():
             unit="kg",
             stock=28,
             warning_threshold=20,
+            urgent_threshold=10,
             supplier_id=suppliers[0].id,
         ),
         Ingredient(
@@ -49,6 +50,7 @@ def seed_data():
             unit="kg",
             stock=12,
             warning_threshold=18,
+            urgent_threshold=8,
             supplier_id=suppliers[0].id,
         ),
         Ingredient(
@@ -57,6 +59,7 @@ def seed_data():
             unit="L",
             stock=65,
             warning_threshold=50,
+            urgent_threshold=20,
             supplier_id=suppliers[1].id,
         ),
         Ingredient(
@@ -65,6 +68,7 @@ def seed_data():
             unit="kg",
             stock=9,
             warning_threshold=15,
+            urgent_threshold=5,
             supplier_id=suppliers[1].id,
         ),
         Ingredient(
@@ -73,6 +77,7 @@ def seed_data():
             unit="瓶",
             stock=34,
             warning_threshold=24,
+            urgent_threshold=10,
             supplier_id=suppliers[2].id,
         ),
     ]

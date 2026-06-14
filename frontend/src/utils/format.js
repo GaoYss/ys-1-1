@@ -1,3 +1,10 @@
+export const WARNING_LEVEL = {
+  NORMAL: 'normal',
+  ATTENTION: 'attention',
+  URGENT: 'urgent',
+  OUT_OF_STOCK: 'out_of_stock'
+}
+
 export function statusText(status) {
   const map = {
     draft: '草稿',
@@ -6,6 +13,37 @@ export function statusText(status) {
     cancelled: '已取消'
   }
   return map[status] || status
+}
+
+export function warningLevelText(level) {
+  const map = {
+    [WARNING_LEVEL.NORMAL]: '正常',
+    [WARNING_LEVEL.ATTENTION]: '关注',
+    [WARNING_LEVEL.URGENT]: '紧急',
+    [WARNING_LEVEL.OUT_OF_STOCK]: '断货'
+  }
+  return map[level] || level
+}
+
+export function warningLevelVariant(level) {
+  const map = {
+    [WARNING_LEVEL.NORMAL]: 'success',
+    [WARNING_LEVEL.ATTENTION]: 'warning',
+    [WARNING_LEVEL.URGENT]: 'danger',
+    [WARNING_LEVEL.OUT_OF_STOCK]: 'out_of_stock'
+  }
+  return map[level] || 'neutral'
+}
+
+export function getWarningLevel(stock, warningThreshold, urgentThreshold) {
+  if (stock <= 0) return WARNING_LEVEL.OUT_OF_STOCK
+  if (stock <= urgentThreshold) return WARNING_LEVEL.URGENT
+  if (stock <= warningThreshold) return WARNING_LEVEL.ATTENTION
+  return WARNING_LEVEL.NORMAL
+}
+
+export function isWarningLevel(level) {
+  return level !== WARNING_LEVEL.NORMAL
 }
 
 export function formatDateTime(value) {

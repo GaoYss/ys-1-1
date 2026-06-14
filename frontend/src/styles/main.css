@@ -269,6 +269,11 @@ th {
   color: #a72f25;
 }
 
+.badge.out_of_stock {
+  background: #2d2d2d;
+  color: #ffffff;
+}
+
 .badge.warning,
 .badge.approved {
   background: #fff0cc;
